@@ -321,9 +321,9 @@
         <option value="反">反</option>
       </select>
       <select class="form-input" id="f-status" onchange="renderTable()" style="width:auto;min-width:110px">
+        <option value="">すべて</option>
         <option value="active">在庫中</option>
         <option value="archived">アーカイブ</option>
-        <option value="">すべて</option>
       </select>
     </div>
 
@@ -759,8 +759,8 @@ function renderTable() {
   const tbody = document.getElementById('inv-body');
   const filtered = items.filter(it => {
     const mq = !q || ['品番', '品名', '色', '仕入先', '弊社品番', '弊社商品名'].some(k => String(it[k] || '').toLowerCase().includes(q));
-    const st = it['_status'] || 'active';
-    const sm = !status || st === status;
+    const st = it['_status'] || '';
+    const sm = !status || (status === 'active' && st !== 'archived') || st === status;
     return mq && (!cat || (it['カテゴリ'] || '') === cat) && (!unit || (it['管理単位'] || 'm') === unit) && sm;
   });
   if (!filtered.length) {
@@ -926,7 +926,7 @@ function submitItemLocal() {
     '規格': document.getElementById('f-spec').value,
     'カテゴリ': document.getElementById('f-cat-input').value,
     '管理単位': document.getElementById('f-unit-select').value,
-    '在庫数': parseFloat(document.getElementById('f-stock').value) || 0,
+    '在庫数': parseFloat(document.getElementById('f-stock').value) || 0, // default 0
     '単価': parseFloat(document.getElementById('f-price').value) || 0,
     '仕入先': document.getElementById('f-supplier').value,
     '弊社品番': document.getElementById('f-own-code').value,
@@ -1331,7 +1331,7 @@ function submitItem() {
     '規格': document.getElementById('f-spec').value,
     'カテゴリ': document.getElementById('f-cat-input').value,
     '管理単位': document.getElementById('f-unit-select').value,
-    '在庫数': parseFloat(document.getElementById('f-stock').value) || 0,
+    '在庫数': parseFloat(document.getElementById('f-stock').value) || 0, // default 0
     '単価': parseFloat(document.getElementById('f-price').value) || 0,
     '仕入先': document.getElementById('f-supplier').value,
     '弊社品番': document.getElementById('f-own-code').value,
