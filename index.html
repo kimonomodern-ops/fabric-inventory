@@ -293,6 +293,7 @@
           <th style="width:36px"></th>
           <th style="width:88px">品番</th>
           <th style="width:130px">品名</th>
+          <th style="width:80px">品目</th>
           <th style="width:88px">弊社品番</th>
           <th style="width:130px">弊社商品名</th>
           <th style="width:70px">色</th>
@@ -395,6 +396,7 @@
   <div class="form-grid">
     <div class="form-group"><div class="form-label">品番</div><input class="form-input" id="f-code" type="text" placeholder="例: KM-001"></div>
     <div class="form-group"><div class="form-label">品名</div><input class="form-input" id="f-name" type="text" placeholder="例: 麻混ローン"></div>
+    <div class="form-group"><div class="form-label">品目</div><input class="form-input" id="f-item-type" type="text" list="item-type-list" placeholder="例: コート、帯、着物"><datalist id="item-type-list"><option value="コート"><option value="帯"><option value="着物"><option value="羽織"><option value="浴衣"><option value="生地"></datalist></div>
     <div class="form-group"><div class="form-label">色</div><input class="form-input" id="f-color" type="text" placeholder="例: オフホワイト"></div>
     <div class="form-group"><div class="form-label">規格</div><input class="form-input" id="f-spec" type="text" placeholder="例: 110cm幅 / 山津織"></div>
     <div class="form-group"><div class="form-label">カテゴリ</div><input class="form-input" id="f-cat-input" type="text" list="cat-list" placeholder="例: 綿、麻、シルク"><datalist id="cat-list"></datalist></div>
@@ -404,7 +406,6 @@
     <div class="form-group"><div class="form-label">在庫数</div><input class="form-input" id="f-stock" type="number" step="0.1" value="0"></div>
     <div class="form-group"><div class="form-label">単価（円）</div><input class="form-input" id="f-price" type="number" value="0"></div>
     <div class="form-group"><div class="form-label">仕入先</div><input class="form-input" id="f-supplier" type="text"></div>
-    <div class="form-group"><div class="form-label">商品紐付けID</div><input class="form-input" id="f-pid" type="text" placeholder="EC商品ID等"></div>
     <div class="form-group"><div class="form-label">弊社品番</div><input class="form-input" id="f-own-code" type="text" placeholder="例: KM-OWN-001"></div>
     <div class="form-group"><div class="form-label">弊社商品名</div><input class="form-input" id="f-own-name" type="text" placeholder="例: 春夏ローンシリーズ"></div>
     <div class="form-group full"><div class="form-label">写真URL</div><input class="form-input" id="f-photo" type="url" placeholder="https://..."></div>
@@ -470,7 +471,7 @@
 
 <script>
 // ===== 定数・グローバル変数 =====
-const FIELDS = ['品番','品名','色','規格','カテゴリ','管理単位','在庫数','単価','仕入先','写真URL','商品紐付けID','弊社品番','弊社商品名','備考'];
+const FIELDS = ['品番','品名','品目','色','規格','カテゴリ','管理単位','在庫数','単価','仕入先','写真URL','弊社品番','弊社商品名','備考'];
 const SK = 'km_fabric_items';
 const HK = 'km_fabric_history';
 const GAS_KEY = 'km_gas_url';
@@ -577,7 +578,7 @@ function renderTable() {
     return mq && (!cat || (it['カテゴリ'] || '') === cat) && (!unit || (it['管理単位'] || 'm') === unit);
   });
   if (!filtered.length) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="14">該当する生地がありません</td></tr>';
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="15">該当する生地がありません</td></tr>';
     return;
   }
   tbody.innerHTML = filtered.map(it => {
@@ -598,6 +599,7 @@ function renderTable() {
       <td>${thumb}</td>
       <td class="primary" title="${escHtml(it['品番'] || '')}">${escHtml(it['品番'] || '')}</td>
       <td class="primary" title="${escHtml(it['品名'] || '')}">${escHtml(it['品名'] || '')}</td>
+      <td title="${escHtml(it['品目'] || '')}">${escHtml(it['品目'] || '')}</td>
       <td title="${escHtml(it['弊社品番'] || '')}">${escHtml(it['弊社品番'] || '')}</td>
       <td title="${escHtml(it['弊社商品名'] || '')}">${escHtml(it['弊社商品名'] || '')}</td>
       <td title="${escHtml(it['色'] || '')}">${escHtml(it['色'] || '')}</td>
@@ -669,7 +671,7 @@ function openAddModal() {
   document.getElementById('modal-eyebrow').textContent = 'New Item';
   document.getElementById('modal-title').textContent = '生地を追加';
   document.getElementById('submit-btn').textContent = '追加する';
-  ['f-code','f-name','f-color','f-spec','f-cat-input','f-supplier','f-pid','f-own-code','f-own-name','f-photo','f-memo'].forEach(id => document.getElementById(id).value = '');
+  ['f-code','f-name','f-item-type','f-color','f-spec','f-cat-input','f-supplier','f-own-code','f-own-name','f-photo','f-memo'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('f-stock').value = 0;
   document.getElementById('f-price').value = 0;
   document.getElementById('f-unit-select').value = 'm';
@@ -685,6 +687,7 @@ function openEditModal(id) {
   document.getElementById('submit-btn').textContent = '更新する';
   document.getElementById('f-code').value = it['品番'] || '';
   document.getElementById('f-name').value = it['品名'] || '';
+  document.getElementById('f-item-type').value = it['品目'] || '';
   document.getElementById('f-color').value = it['色'] || '';
   document.getElementById('f-spec').value = it['規格'] || '';
   document.getElementById('f-cat-input').value = it['カテゴリ'] || '';
@@ -692,7 +695,6 @@ function openEditModal(id) {
   document.getElementById('f-stock').value = it['在庫数'] || 0;
   document.getElementById('f-price').value = it['単価'] || 0;
   document.getElementById('f-supplier').value = it['仕入先'] || '';
-  document.getElementById('f-pid').value = it['商品紐付けID'] || '';
   document.getElementById('f-own-code').value = it['弊社品番'] || '';
   document.getElementById('f-own-name').value = it['弊社商品名'] || '';
   document.getElementById('f-photo').value = it['写真URL'] || '';
@@ -707,6 +709,7 @@ function submitItemLocal() {
   const data = {
     '品番': code,
     '品名': name,
+    '品目': document.getElementById('f-item-type').value,
     '色': document.getElementById('f-color').value,
     '規格': document.getElementById('f-spec').value,
     'カテゴリ': document.getElementById('f-cat-input').value,
@@ -714,7 +717,6 @@ function submitItemLocal() {
     '在庫数': parseFloat(document.getElementById('f-stock').value) || 0,
     '単価': parseFloat(document.getElementById('f-price').value) || 0,
     '仕入先': document.getElementById('f-supplier').value,
-    '商品紐付けID': document.getElementById('f-pid').value,
     '弊社品番': document.getElementById('f-own-code').value,
     '弊社商品名': document.getElementById('f-own-name').value,
     '写真URL': document.getElementById('f-photo').value,
@@ -855,9 +857,9 @@ const IFM = {
   '単価': ['単価','price','価格'],
   '仕入先': ['仕入先','supplier'],
   '写真URL': ['写真url','写真','photo','image url','画像url'],
-  '商品紐付けID': ['商品紐付けid','商品id','product id','ec id'],
+  '品目': ['品目','item type','item_type','種目','アイテム'],
   '規格': ['規格','spec','仕様','規格・内容'],
-  '弊社品番': ['弊社品番','自社品番','own code','own_code'],
+  '弊社品番': ['弊社品番','自社品番','own code','own_code','商品紐付けid','商品id','product id','ec id'],
   '弊社商品名': ['弊社商品名','自社商品名','own name','own_name'],
   '備考': ['備考','memo','note','notes']
 };
@@ -1112,6 +1114,7 @@ function submitItem() {
     action: editId ? 'updateItem' : 'addItem',
     '品番': code,
     '品名': name,
+    '品目': document.getElementById('f-item-type').value,
     '色': document.getElementById('f-color').value,
     '規格': document.getElementById('f-spec').value,
     'カテゴリ': document.getElementById('f-cat-input').value,
@@ -1119,7 +1122,6 @@ function submitItem() {
     '在庫数': parseFloat(document.getElementById('f-stock').value) || 0,
     '単価': parseFloat(document.getElementById('f-price').value) || 0,
     '仕入先': document.getElementById('f-supplier').value,
-    '商品紐付けID': document.getElementById('f-pid').value,
     '弊社品番': document.getElementById('f-own-code').value,
     '弊社商品名': document.getElementById('f-own-name').value,
     '写真URL': document.getElementById('f-photo').value,
