@@ -195,6 +195,41 @@
   /* Toast */
   #toast { position: fixed; bottom: 24px; right: 24px; background: var(--ink); color: white; padding: 10px 18px; border-radius: var(--radius-lg); font-size: 12px; opacity: 0; transition: opacity 0.3s; z-index: 999; pointer-events: none; }
   #toast.show { opacity: 1; }
+
+  /* Checkbox */
+  input[type=checkbox] { width: 14px; height: 14px; accent-color: var(--rouge); cursor: pointer; }
+  th input[type=checkbox], td input[type=checkbox] { display: block; margin: 0 auto; }
+  tr.selected td { background: var(--rouge-light) !important; }
+
+  /* Bulk action bar */
+  .bulk-bar { display: none; align-items: center; gap: 10px; padding: 8px 14px; background: var(--rouge-light); border: 0.5px solid #e8c0b0; border-radius: var(--radius); margin-bottom: 12px; font-size: 12px; color: var(--rouge-dark); flex-wrap: wrap; }
+  .bulk-bar.show { display: flex; }
+  .bulk-bar .sel-count { font-weight: 400; margin-right: 4px; }
+  .btn-danger { background: var(--danger-light); border: 0.5px solid #e0b0b0; color: var(--danger); }
+  .btn-danger:hover { background: #f8d0d0; }
+  .btn-archive { background: var(--indigo-light); border: 0.5px solid #bfcfdf; color: var(--indigo); }
+  .btn-archive:hover { background: #d0dff0; }
+  .btn-move { background: var(--moss-light); border: 0.5px solid #b0cfb0; color: var(--moss); }
+  .btn-move:hover { background: #d0e8d0; }
+
+  /* Detail modal */
+  .detail-modal { width: min(640px, 96vw); }
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 0.5px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 20px; }
+  .detail-row { display: contents; }
+  .detail-row .dk { background: var(--kinari2); padding: 9px 14px; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--ink3); border-bottom: 0.5px solid var(--border); }
+  .detail-row .dv { background: var(--white); padding: 9px 14px; font-size: 13px; color: var(--ink); border-bottom: 0.5px solid var(--border); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .detail-row:last-child .dk, .detail-row:last-child .dv { border-bottom: none; }
+  .detail-row.full .dk { grid-column: 1; }
+  .detail-row.full .dv { grid-column: 2; }
+  .detail-photo { width: 100%; max-height: 180px; object-fit: cover; border-radius: var(--radius); border: 0.5px solid var(--border); margin-bottom: 16px; }
+  .detail-stock-bar { background: var(--kinari2); border-radius: var(--radius); padding: 12px 16px; margin-bottom: 16px; display: flex; gap: 24px; align-items: center; }
+  .detail-stock-bar .ds-label { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--ink3); margin-bottom: 2px; }
+  .detail-stock-bar .ds-val { font-family: var(--serif); font-size: 22px; font-weight: 300; color: var(--ink); }
+
+  /* Move modal */
+  .move-modal { width: min(400px, 96vw); }
+  .badge-archived { background: #f0f0f0; color: #888; border: 0.5px solid #ccc; }
+  .badge-location { background: var(--moss-light); color: var(--moss); border: 0.5px solid #b0cfb0; }
 </style>
 </head>
 <body>
@@ -285,26 +320,32 @@
         <option value="m">m</option>
         <option value="反">反</option>
       </select>
+      <select class="form-input" id="f-status" onchange="renderTable()" style="width:auto;min-width:110px">
+        <option value="active">在庫中</option>
+        <option value="archived">アーカイブ</option>
+        <option value="">すべて</option>
+      </select>
+    </div>
+
+    <!-- 一括操作バー -->
+    <div class="bulk-bar" id="bulk-bar">
+      <span class="sel-count" id="sel-count">0件選択中</span>
+      <button class="btn btn-sm btn-danger" onclick="bulkDelete()">✕ 削除</button>
+      <button class="btn btn-sm btn-archive" onclick="bulkArchive()">✓ アーカイブ</button>
+      <button class="btn btn-sm btn-move" onclick="openMoveModal()">→ 移動先を設定</button>
+      <button class="btn btn-sm btn-ghost" onclick="clearSelection()" style="margin-left:auto">選択解除</button>
     </div>
 
     <div class="table-wrap">
       <table>
         <thead><tr>
-          <th style="width:36px"></th>
-          <th style="width:88px">品番</th>
-          <th style="width:130px">品名</th>
-          <th style="width:80px">品目</th>
-          <th style="width:88px">弊社品番</th>
-          <th style="width:130px">弊社商品名</th>
-          <th style="width:70px">色</th>
-          <th style="width:80px">規格</th>
-          <th style="width:96px">カテゴリ</th>
-          <th style="width:46px">単位</th>
-          <th style="width:60px">在庫</th>
-          <th style="width:72px">単価</th>
-          <th style="width:80px">金額</th>
-          <th style="width:158px">数量入力</th>
-          <th style="width:88px">操作</th>
+          <th style="width:32px"><input type="checkbox" id="check-all" onchange="toggleAllCheck(this)"></th>
+          <th style="width:100px">弊社品番</th>
+          <th>弊社商品名</th>
+          <th style="width:90px">品番</th>
+          <th style="width:60px">色番</th>
+          <th style="width:80px">生地数量</th>
+          <th style="width:60px">詳細</th>
         </tr></thead>
         <tbody id="inv-body"></tbody>
       </table>
@@ -414,6 +455,46 @@
   <div class="modal-footer">
     <button class="btn" onclick="closeModal('item-modal')">キャンセル</button>
     <button class="btn btn-primary" onclick="submitItem()" id="submit-btn">追加する</button>
+  </div>
+</div>
+</div>
+
+<!-- 詳細モーダル -->
+<div class="overlay" id="detail-modal">
+<div class="modal detail-modal">
+  <div class="modal-eyebrow">Detail</div>
+  <h3 id="dm-title"></h3>
+  <div id="dm-photo-wrap" style="display:none">
+    <img id="dm-photo" class="detail-photo" src="" alt="">
+  </div>
+  <div class="detail-stock-bar">
+    <div><div class="ds-label">在庫数</div><div class="ds-val" id="dm-stock"></div></div>
+    <div><div class="ds-label">単価</div><div class="ds-val" id="dm-price"></div></div>
+    <div><div class="ds-label">棚卸金額</div><div class="ds-val" id="dm-value"></div></div>
+  </div>
+  <div class="detail-grid" id="dm-grid"></div>
+  <div class="modal-footer">
+    <button class="btn" onclick="closeModal('detail-modal')">閉じる</button>
+    <button class="btn btn-ghost" onclick="openEditFromDetail()">✓ 編集</button>
+    <button class="btn btn-primary" onclick="openStockFromDetail()">⇄ 入出庫</button>
+  </div>
+</div>
+</div>
+
+<!-- 移動モーダル -->
+<div class="overlay" id="move-modal">
+<div class="modal move-modal">
+  <div class="modal-eyebrow">Move</div>
+  <h3>移動先を設定</h3>
+  <p style="font-size:12px;color:var(--ink3);margin-bottom:20px">選択中の生地に「場所」を記録します。</p>
+  <div class="form-group" style="margin-bottom:20px">
+    <div class="form-label">場所（例: A棚・倉庫1）</div>
+    <input class="form-input" id="move-location" type="text" list="location-list" placeholder="例: A棚、倉庫1、展示室">
+    <datalist id="location-list"></datalist>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" onclick="closeModal('move-modal')">キャンセル</button>
+    <button class="btn btn-move" onclick="executeMoveSelected()">設定する</button>
   </div>
 </div>
 </div>
@@ -567,60 +648,191 @@ function rebuildShipSelect() {
     items.map(it => `<option value="${it._id}">${it['品番'] ? it['品番'] + ' ' : ''}${it['品名']}（${it['在庫数']}${it['管理単位'] || 'm'}）</option>`).join('');
 }
 
+// ===== 選択管理 =====
+let selectedIds = new Set();
+
+function toggleAllCheck(cb) {
+  document.querySelectorAll('.row-check').forEach(c => {
+    c.checked = cb.checked;
+    const id = c.dataset.id;
+    if (cb.checked) selectedIds.add(id); else selectedIds.delete(id);
+    c.closest('tr').classList.toggle('selected', cb.checked);
+  });
+  updateBulkBar();
+}
+
+function toggleRowCheck(cb, id) {
+  if (cb.checked) selectedIds.add(id); else selectedIds.delete(id);
+  cb.closest('tr').classList.toggle('selected', cb.checked);
+  updateBulkBar();
+  const all = document.getElementById('check-all');
+  if (all) {
+    const total = document.querySelectorAll('.row-check').length;
+    all.checked = selectedIds.size === total && total > 0;
+    all.indeterminate = selectedIds.size > 0 && selectedIds.size < total;
+  }
+}
+
+function updateBulkBar() {
+  const bar = document.getElementById('bulk-bar');
+  const cnt = document.getElementById('sel-count');
+  if (selectedIds.size > 0) {
+    bar.classList.add('show');
+    cnt.textContent = selectedIds.size + '件選択中';
+  } else {
+    bar.classList.remove('show');
+  }
+}
+
+function clearSelection() {
+  selectedIds.clear();
+  document.querySelectorAll('.row-check').forEach(c => { c.checked = false; c.closest('tr').classList.remove('selected'); });
+  const all = document.getElementById('check-all');
+  if (all) { all.checked = false; all.indeterminate = false; }
+  updateBulkBar();
+}
+
+// ===== 一括操作 =====
+function bulkDelete() {
+  if (!selectedIds.size) return;
+  if (!confirm(selectedIds.size + '件の生地を削除しますか？')) return;
+  const ids = [...selectedIds];
+  if (GAS_MODE) {
+    Promise.all(ids.map(id => {
+      const it = items.find(i => i._id === id);
+      return it ? callGASPost({ action: 'deleteItem', _row: it._row }) : Promise.resolve({ success: true });
+    })).then(() => { gasSync(); showToast(ids.length + '件削除しました'); });
+  } else {
+    items = items.filter(i => !ids.includes(i._id));
+    save(); renderTable(); updateStats();
+    showToast(ids.length + '件削除しました');
+  }
+  selectedIds.clear();
+  updateBulkBar();
+}
+
+function bulkArchive() {
+  if (!selectedIds.size) return;
+  const ids = [...selectedIds];
+  ids.forEach(id => {
+    const it = items.find(i => i._id === id);
+    if (it) it['_status'] = 'archived';
+  });
+  save();
+  if (GAS_MODE) gasSync();
+  renderTable(); updateStats();
+  showToast(ids.length + '件をアーカイブしました');
+  selectedIds.clear(); updateBulkBar();
+}
+
+function openMoveModal() {
+  if (!selectedIds.size) return;
+  // 既存の場所候補を収集
+  const locs = [...new Set(items.map(i => i['_location'] || '').filter(Boolean))].sort();
+  document.getElementById('location-list').innerHTML = locs.map(l => `<option value="${escHtml(l)}">`).join('');
+  document.getElementById('move-location').value = '';
+  document.getElementById('move-modal').classList.add('open');
+}
+
+function executeMoveSelected() {
+  const loc = document.getElementById('move-location').value.trim();
+  if (!loc) { alert('場所を入力してください'); return; }
+  const ids = [...selectedIds];
+  ids.forEach(id => {
+    const it = items.find(i => i._id === id);
+    if (it) it['_location'] = loc;
+  });
+  save();
+  if (GAS_MODE) gasSync();
+  renderTable();
+  showToast(ids.length + '件を「' + loc + '」に移動しました');
+  closeModal('move-modal');
+  selectedIds.clear(); updateBulkBar();
+}
+
 // ===== 在庫テーブル描画 =====
 function renderTable() {
   const q = (document.getElementById('search').value || '').toLowerCase();
   const cat = document.getElementById('f-cat').value;
   const unit = document.getElementById('f-unit').value;
+  const status = document.getElementById('f-status').value;
   const tbody = document.getElementById('inv-body');
   const filtered = items.filter(it => {
-    const mq = !q || ['品番', '品名', '色', '仕入先'].some(k => String(it[k] || '').toLowerCase().includes(q));
-    return mq && (!cat || (it['カテゴリ'] || '') === cat) && (!unit || (it['管理単位'] || 'm') === unit);
+    const mq = !q || ['品番', '品名', '色', '仕入先', '弊社品番', '弊社商品名'].some(k => String(it[k] || '').toLowerCase().includes(q));
+    const st = it['_status'] || 'active';
+    const sm = !status || st === status;
+    return mq && (!cat || (it['カテゴリ'] || '') === cat) && (!unit || (it['管理単位'] || 'm') === unit) && sm;
   });
   if (!filtered.length) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="15">該当する生地がありません</td></tr>';
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">該当する生地がありません</td></tr>';
     return;
   }
   tbody.innerHTML = filtered.map(it => {
     const stock = Number(it['在庫数']) || 0;
-    const price = Number(it['単価']) || 0;
-    const lowCls = stock < 5 ? ' class="low"' : '';
-    const thumb = it['写真URL']
-      ? `<img src="${escHtml(it['写真URL'])}" class="img-thumb" alt="" onerror="this.style.display='none'">`
-      : `<span class="img-placeholder"></span>`;
-    const ub = it['管理単位'] === '反'
-      ? '<span class="badge badge-tan">反</span>'
-      : '<span class="badge badge-m">m</span>';
-    const cb = it['カテゴリ']
-      ? `<span class="badge badge-cat">${escHtml(it['カテゴリ'])}</span>`
-      : '<span style="color:var(--ink3)">—</span>';
+    const unit2 = it['管理単位'] || 'm';
+    const lowCls = stock < 5 ? ' style="color:var(--warn);font-weight:400"' : '';
+    const isArchived = it['_status'] === 'archived';
     const id = it._id;
-    return `<tr>
-      <td>${thumb}</td>
-      <td class="primary" title="${escHtml(it['品番'] || '')}">${escHtml(it['品番'] || '')}</td>
-      <td class="primary" title="${escHtml(it['品名'] || '')}">${escHtml(it['品名'] || '')}</td>
-      <td title="${escHtml(it['品目'] || '')}">${escHtml(it['品目'] || '')}</td>
-      <td title="${escHtml(it['弊社品番'] || '')}">${escHtml(it['弊社品番'] || '')}</td>
-      <td title="${escHtml(it['弊社商品名'] || '')}">${escHtml(it['弊社商品名'] || '')}</td>
-      <td title="${escHtml(it['色'] || '')}">${escHtml(it['色'] || '')}</td>
-      <td title="${escHtml(it['規格'] || '')}">${escHtml(it['規格'] || '')}</td>
-      <td>${cb}</td>
-      <td>${ub}</td>
-      <td${lowCls}>${stock}</td>
-      <td>¥${price.toLocaleString()}</td>
-      <td>¥${(stock * price).toLocaleString()}</td>
-      <td><div class="qty-cell">
-        <input type="number" id="q-${id}" step="1" min="0" placeholder="数量">
-        <button class="btn-in-sm" onclick="inlineUpdate('${id}',1)">↓入</button>
-        <button class="btn-out-sm" onclick="inlineUpdate('${id}',-1)">↑出</button>
-      </div></td>
-      <td><div class="action-cell">
-        <button class="btn btn-sm btn-ghost" onclick="openStockModal('${id}')" title="詳細更新">⇄</button>
-        <button class="btn btn-sm btn-ghost" onclick="openEditModal('${id}')" title="編集">✎</button>
-        <button class="btn btn-sm btn-ghost" onclick="deleteItem('${id}')" title="削除" style="color:var(--danger)">✕</button>
-      </div></td>
+    const checked = selectedIds.has(id);
+    const locBadge = it['_location'] ? `<span class="badge badge-location" style="font-size:9px;margin-left:4px">${escHtml(it['_location'])}</span>` : '';
+    const archBadge = isArchived ? `<span class="badge badge-archived" style="font-size:9px;margin-left:4px">アーカイブ</span>` : '';
+    return `<tr class="${checked ? 'selected' : ''}" ondblclick="openDetailModal('${id}')">
+      <td><input type="checkbox" class="row-check" data-id="${id}" ${checked ? 'checked' : ''} onchange="toggleRowCheck(this,'${id}')" onclick="event.stopPropagation()"></td>
+      <td class="primary">${escHtml(it['弊社品番'] || '')}${archBadge}</td>
+      <td class="primary">${escHtml(it['弊社商品名'] || it['品名'] || '')}${locBadge}</td>
+      <td>${escHtml(it['品番'] || '')}</td>
+      <td>${escHtml(it['色'] || '')}</td>
+      <td${lowCls}>${stock} ${unit2}</td>
+      <td><button class="btn btn-sm btn-ghost" onclick="openDetailModal('${id}')" style="padding:3px 8px;font-size:11px">詳細</button></td>
     </tr>`;
   }).join('');
+  // 全選択チェックボックスの状態を更新
+  const all = document.getElementById('check-all');
+  if (all) {
+    const total = filtered.length;
+    const selInView = filtered.filter(it => selectedIds.has(it._id)).length;
+    all.checked = selInView === total && total > 0;
+    all.indeterminate = selInView > 0 && selInView < total;
+  }
+}
+
+// ===== 詳細モーダル =====
+let detailId = null;
+function openDetailModal(id) {
+  detailId = id;
+  const it = items.find(i => i._id === id);
+  if (!it) return;
+  const stock = Number(it['在庫数']) || 0;
+  const price = Number(it['単価']) || 0;
+  document.getElementById('dm-title').textContent = (it['弊社商品名'] || it['品名'] || '') + (it['弊社品番'] ? '  ' + it['弊社品番'] : '');
+  document.getElementById('dm-stock').textContent = stock + ' ' + (it['管理単位'] || 'm');
+  document.getElementById('dm-price').textContent = '¥' + price.toLocaleString();
+  document.getElementById('dm-value').textContent = '¥' + (stock * price).toLocaleString();
+  const pw = document.getElementById('dm-photo-wrap');
+  const pi = document.getElementById('dm-photo');
+  if (it['写真URL']) { pi.src = it['写真URL']; pw.style.display = ''; } else { pw.style.display = 'none'; }
+  const fields = [
+    ['品番', it['品番']], ['品名', it['品名']],
+    ['品目', it['品目']], ['色', it['色']],
+    ['規格', it['規格']], ['カテゴリ', it['カテゴリ']],
+    ['仕入先', it['仕入先']], ['弊社品番', it['弊社品番']],
+    ['弊社商品名', it['弊社商品名']], ['場所', it['_location'] || ''],
+    ['ステータス', it['_status'] === 'archived' ? 'アーカイブ' : '在庫中'], ['備考', it['備考']]
+  ];
+  document.getElementById('dm-grid').innerHTML = fields.map(([k, v]) =>
+    `<div class="detail-row"><div class="dk">${k}</div><div class="dv" title="${escHtml(v || '')}">${escHtml(v || '—')}</div></div>`
+  ).join('');
+  document.getElementById('detail-modal').classList.add('open');
+}
+
+function openEditFromDetail() {
+  closeModal('detail-modal');
+  if (detailId) openEditModal(detailId);
+}
+
+function openStockFromDetail() {
+  closeModal('detail-modal');
+  if (detailId) openStockModal(detailId);
 }
 
 function escHtml(s) {
