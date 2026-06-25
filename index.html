@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>生地在庫管理 — KIMONO MODERN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --kinari: #f7f4ef;
+    --kinari2: #f0ece4;
+    --kinari3: #e8e3d8;
+    --white: #ffffff;
+    --ink: #1e1c19;
+    --ink2: #5a574f;
+    --ink3: #9a9690;
+    --rouge: #c4725a;
+    --rouge-light: #f9ede8;
+    --rouge-dark: #a35a44;
+    --indigo: #2c3e5a;
+    --indigo-light: #e8edf5;
+    --moss: #4a6148;
+    --moss-light: #eaf0e8;
+    --border: #ddd8cf;
+    --border2: #ccc6bb;
+    --warn: #b87040;
+    --warn-light: #fdf2e8;
+    --danger: #b04040;
+    --danger-light: #fdeaea;
+    --serif: 'Cormorant Garamond', 'Hiragino Mincho ProN', '游明朝', serif;
+    --sans: 'Noto Sans JP', 'Hiragino Sans', 'ヒラギノ角ゴ', sans-serif;
+    --radius: 4px;
+    --radius-lg: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--sans); background: var(--kinari); color: var(--ink); font-size: 13px; line-height: 1.7; font-weight: 300; }
+
+  /* Layout */
+  .layout { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+  .sidebar { background: var(--white); border-right: 0.5px solid var(--border); padding: 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column; }
+  .main { padding: 32px 36px; overflow-x: hidden; background: var(--kinari); }
+
+  /* Sidebar */
+  .sidebar-head { padding: 28px 24px 24px; border-bottom: 0.5px solid var(--border); }
+  .sidebar-brand { font-family: var(--serif); font-size: 11px; font-weight: 400; letter-spacing: 2.5px; text-transform: uppercase; color: var(--ink3); margin-bottom: 6px; }
+  .sidebar-title { font-family: var(--serif); font-size: 18px; font-weight: 300; letter-spacing: 0.5px; color: var(--ink); line-height: 1.3; }
+  .nav-group { padding: 20px 0 8px; }
+  .nav-label { font-size: 9px; font-weight: 500; color: var(--ink3); text-transform: uppercase; letter-spacing: 1.5px; padding: 0 24px 8px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 24px; font-size: 12px; font-weight: 300; color: var(--ink2); cursor: pointer; border-left: 2px solid transparent; transition: all 0.15s; letter-spacing: 0.3px; }
+  .nav-item:hover { color: var(--ink); background: var(--kinari); }
+  .nav-item.active { color: var(--rouge); border-left-color: var(--rouge); background: var(--rouge-light); font-weight: 400; }
+  .nav-item svg { width: 14px; height: 14px; flex-shrink: 0; stroke-width: 1.5; }
+
+  .sidebar-summary { margin: auto 0 0; padding: 20px 24px; border-top: 0.5px solid var(--border); }
+  .sum-label { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--ink3); margin-bottom: 4px; }
+  .sum-value { font-family: var(--serif); font-size: 22px; font-weight: 300; color: var(--ink); letter-spacing: -0.5px; }
+  .sum-sub { font-size: 11px; color: var(--ink3); margin-top: 2px; }
+  .low-pill { display: inline-block; background: var(--warn-light); color: var(--warn); font-size: 11px; padding: 2px 8px; border-radius: 20px; border: 0.5px solid #e8c090; margin-top: 6px; }
+
+  /* Page header */
+  .page-header { display: flex; align-items: baseline; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
+  .page-title { font-family: var(--serif); font-size: 26px; font-weight: 300; letter-spacing: 0.5px; color: var(--ink); flex: 1; }
+  .page-title span { font-size: 13px; font-family: var(--sans); font-weight: 300; color: var(--ink3); letter-spacing: 1.5px; text-transform: uppercase; display: block; margin-bottom: 2px; }
+
+  /* Buttons */
+  button { font-family: var(--sans); font-size: 12px; cursor: pointer; border-radius: var(--radius); transition: all 0.15s; font-weight: 300; letter-spacing: 0.5px; }
+  .btn { padding: 8px 16px; background: var(--white); border: 0.5px solid var(--border2); color: var(--ink); display: inline-flex; align-items: center; gap: 7px; }
+  .btn:hover { background: var(--kinari2); }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--rouge); border-color: var(--rouge); color: white; }
+  .btn-primary:hover { background: var(--rouge-dark); border-color: var(--rouge-dark); }
+  .btn-ship { background: var(--warn-light); border: 0.5px solid #e0a870; color: var(--warn); }
+  .btn-ship:hover { background: #fde8d0; }
+  .btn-sm { padding: 4px 10px; font-size: 11px; }
+  .btn-ghost { background: transparent; border: 0.5px solid var(--border); color: var(--ink2); }
+  .btn-ghost:hover { background: var(--kinari); }
+
+  /* Stats */
+  .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; margin-bottom: 28px; border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+  .stat-card { background: var(--white); padding: 18px 20px; }
+  .stat-card .s-label { font-size: 9px; color: var(--ink3); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px; }
+  .stat-card .s-val { font-family: var(--serif); font-size: 26px; font-weight: 300; color: var(--ink); line-height: 1; }
+  .stat-card .s-val.rouge { color: var(--rouge); }
+  .stat-card .s-val.warn { color: var(--warn); }
+
+  /* Filter bar */
+  .filter-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+  .filter-bar input, .filter-bar select { padding: 8px 12px; border: 0.5px solid var(--border); border-radius: var(--radius); background: var(--white); color: var(--ink); font-size: 12px; font-family: var(--sans); font-weight: 300; letter-spacing: 0.3px; }
+  .filter-bar input { flex: 1; min-width: 160px; }
+  .filter-bar input:focus, .filter-bar select:focus { outline: none; border-color: var(--rouge); }
+  .filter-bar select { min-width: 120px; }
+
+  /* Table */
+  .table-wrap { border: 0.5px solid var(--border); border-radius: var(--radius-lg); background: var(--white); overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
+  th { font-weight: 400; text-align: left; padding: 12px 14px; border-bottom: 0.5px solid var(--border); color: var(--ink3); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; background: var(--kinari); }
+  td { padding: 10px 14px; border-bottom: 0.5px solid var(--border); vertical-align: middle; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink2); }
+  td.primary { color: var(--ink); font-weight: 400; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--kinari); }
+  .empty-row td { text-align: center; color: var(--ink3); padding: 48px; font-family: var(--serif); font-size: 15px; font-weight: 300; }
+
+  /* Badges */
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 2px; font-size: 10px; letter-spacing: 0.5px; }
+  .badge-m { background: var(--indigo-light); color: var(--indigo); border: 0.5px solid #bfcfdf; }
+  .badge-tan { background: var(--kinari2); color: var(--ink2); border: 0.5px solid var(--border); }
+  .badge-cat { background: var(--rouge-light); color: var(--rouge-dark); border: 0.5px solid #e8c0b0; }
+  .badge-in { background: var(--moss-light); color: var(--moss); border: 0.5px solid #b0cfb0; }
+  .badge-out { background: var(--danger-light); color: var(--danger); border: 0.5px solid #e0b0b0; }
+  .badge-ship { background: var(--warn-light); color: var(--warn); border: 0.5px solid #e0c090; }
+  .badge-adj { background: var(--indigo-light); color: var(--indigo); border: 0.5px solid #bfcfdf; }
+  .low { color: var(--warn); }
+  .img-thumb { width: 32px; height: 32px; object-fit: cover; border-radius: 2px; border: 0.5px solid var(--border); vertical-align: middle; }
+  .img-placeholder { width: 32px; height: 32px; background: var(--kinari2); border-radius: 2px; display: inline-block; border: 0.5px solid var(--border); }
+
+  /* Inline qty */
+  .qty-cell { display: flex; align-items: center; gap: 5px; }
+  .qty-cell input { width: 60px; padding: 5px 7px; font-size: 12px; text-align: right; border: 0.5px solid var(--border); border-radius: var(--radius); background: var(--kinari); color: var(--ink); font-family: var(--sans); }
+  .qty-cell input:focus { outline: none; border-color: var(--rouge); background: var(--white); }
+  .btn-in-sm { background: var(--moss-light); border: 0.5px solid #b0cfb0; color: var(--moss); padding: 4px 8px; font-size: 11px; border-radius: var(--radius); cursor: pointer; }
+  .btn-in-sm:hover { background: #d0e8d0; }
+  .btn-out-sm { background: var(--danger-light); border: 0.5px solid #e0b0b0; color: var(--danger); padding: 4px 8px; font-size: 11px; border-radius: var(--radius); cursor: pointer; }
+  .btn-out-sm:hover { background: #f8d0d0; }
+  .action-cell { display: flex; gap: 4px; }
+
+  /* Forms */
+  .form-input { width: 100%; padding: 9px 12px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--white); color: var(--ink); font-size: 13px; font-family: var(--sans); font-weight: 300; }
+  .form-input:focus { outline: none; border-color: var(--rouge); }
+  textarea.form-input { resize: vertical; }
+  select.form-input { cursor: pointer; }
+
+  /* Overlays / Modals */
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(20,18,15,0.5); z-index: 200; align-items: center; justify-content: center; }
+  .overlay.open { display: flex; }
+  .modal { background: var(--white); border-radius: var(--radius-lg); border: 0.5px solid var(--border); padding: 32px; width: min(540px, 94vw); max-height: 90vh; overflow-y: auto; }
+  .modal-eyebrow { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--ink3); margin-bottom: 8px; }
+  .modal h3 { font-family: var(--serif); font-size: 20px; font-weight: 300; margin-bottom: 24px; color: var(--ink); }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-grid .full { grid-column: 1/-1; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-label { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--ink3); font-weight: 400; }
+  .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 28px; padding-top: 20px; border-top: 0.5px solid var(--border); }
+  .modal-info { background: var(--kinari2); border-radius: var(--radius); padding: 12px 16px; margin-bottom: 20px; font-size: 12px; color: var(--ink2); border-left: 2px solid var(--rouge); }
+  .ship-info-bar { background: var(--warn-light); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 18px; font-size: 12px; color: var(--warn); border-left: 2px solid var(--warn); }
+
+  /* Import */
+  .import-zone { border: 1px dashed var(--border2); border-radius: var(--radius-lg); padding: 28px; text-align: center; cursor: pointer; transition: all 0.15s; background: var(--kinari); }
+  .import-zone:hover, .import-zone.drag { border-color: var(--rouge); background: var(--rouge-light); }
+  .import-zone .zone-icon { font-family: var(--serif); font-size: 32px; color: var(--ink3); margin-bottom: 8px; }
+  .import-zone p { color: var(--ink2); font-size: 12px; margin-top: 4px; }
+  .import-zone .hint { font-size: 10px; color: var(--ink3); margin-top: 4px; letter-spacing: 0.5px; }
+  textarea.paste-area { min-height: 120px; font-family: monospace; font-size: 11px; resize: vertical; background: var(--kinari); }
+  .preview-table { overflow: auto; margin-top: 14px; max-height: 200px; border: 0.5px solid var(--border); border-radius: var(--radius); }
+  .preview-table table { table-layout: auto; }
+  .preview-table th { font-size: 10px; }
+  .preview-table td { font-size: 11px; }
+  .import-tip { font-size: 11px; color: var(--ink3); margin-top: 10px; line-height: 1.8; padding-left: 12px; border-left: 0.5px solid var(--border); }
+
+  /* Pills */
+  .pill-tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+  .pill { padding: 5px 14px; border-radius: 20px; border: 0.5px solid var(--border); background: var(--white); color: var(--ink3); font-size: 11px; cursor: pointer; letter-spacing: 0.5px; }
+  .pill.active { background: var(--rouge); border-color: var(--rouge); color: white; }
+
+  /* Panes */
+  .pane { display: none; }
+  .pane.active { display: block; }
+
+  /* Divider */
+  .section-divider { height: 0.5px; background: var(--border); margin: 20px 0; }
+
+  /* Export row */
+  .sidebar-export { padding: 16px 24px; border-top: 0.5px solid var(--border); }
+
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+  /* GAS Banner */
+  .gas-banner { background: var(--kinari2); border-bottom: 0.5px solid var(--border); padding: 8px 24px; display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--ink2); flex-wrap: wrap; }
+  .gas-banner input { flex: 1; max-width: 480px; padding: 5px 10px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--white); color: var(--ink); font-family: var(--sans); font-size: 12px; }
+  .gas-banner input:focus { outline: none; border-color: var(--rouge); }
+  .conn-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border2); flex-shrink: 0; transition: background 0.3s; }
+  .conn-dot.on { background: #4a9a60; }
+  .conn-dot.err { background: var(--danger); }
+  .sync-label { font-size: 11px; color: var(--ink3); white-space: nowrap; }
+  .mode-pill { font-size: 10px; padding: 2px 8px; border-radius: 20px; background: var(--kinari2); border: 0.5px solid var(--border); color: var(--ink3); white-space: nowrap; }
+  .mode-pill.gas-mode { background: #e8f5e9; border-color: #a5d6a7; color: #2e7d32; }
+
+  /* Loading spinner */
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--rouge); border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: middle; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Toast */
+  #toast { position: fixed; bottom: 24px; right: 24px; background: var(--ink); color: white; padding: 10px 18px; border-radius: var(--radius-lg); font-size: 12px; opacity: 0; transition: opacity 0.3s; z-index: 999; pointer-events: none; }
+  #toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<!-- GAS接続バナー -->
+<div class="gas-banner" id="gas-banner">
+  <div class="conn-dot" id="conn-dot"></div>
+  <span class="sync-label" id="conn-label">GAS URL（省略時はブラウザ保存）</span>
+  <input type="text" id="gas-url-input" placeholder="https://script.google.com/macros/s/.../exec" oninput="onGasUrlInput()">
+  <button class="btn btn-sm" onclick="connectGas()" style="white-space:nowrap">接続</button>
+  <button class="btn btn-sm btn-ghost" onclick="disconnectGas()" style="white-space:nowrap" title="GAS接続を解除">解除</button>
+  <span class="mode-pill" id="mode-pill">ローカル保存</span>
+</div>
+
+<div class="layout">
+
+<!-- サイドバー -->
+<aside class="sidebar">
+  <div class="sidebar-head">
+    <div class="sidebar-brand">Kimono Modern</div>
+    <div class="sidebar-title">生地<br>在庫管理</div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-label">Menu</div>
+    <div class="nav-item active" id="nav-inventory" onclick="showPane('inventory',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      在庫一覧
+    </div>
+    <div class="nav-item" id="nav-history" onclick="showPane('history',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="12 8 12 12 14 14"/><path d="M3.05 11a9 9 0 1 0 .5-4.5"/><polyline points="3 3 3 7 7 7"/></svg>
+      入出庫履歴
+    </div>
+    <div class="nav-item" id="nav-import" onclick="showPane('import',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      一括インポート
+    </div>
+  </div>
+
+  <div class="sidebar-summary">
+    <div class="sum-label">棚卸金額</div>
+    <div class="sum-value" id="sb-val">¥0</div>
+    <div class="sum-sub" id="sb-items">品目数 —</div>
+    <div class="low-pill" id="sb-low">在庫少 — 品目</div>
+  </div>
+
+  <div class="sidebar-export">
+    <button class="btn btn-ghost" onclick="exportCSV()" style="width:100%;justify-content:center;font-size:11px;letter-spacing:1px;">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      CSV Export
+    </button>
+  </div>
+</aside>
+
+<!-- メイン -->
+<main class="main">
+
+  <!-- 在庫一覧 -->
+  <div class="pane active" id="pane-inventory">
+    <div class="page-header">
+      <div class="page-title"><span>Inventory</span>在庫一覧</div>
+      <button class="btn btn-primary" onclick="openAddModal()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        追加
+      </button>
+      <button class="btn btn-ship" onclick="openShipModal()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        出荷処理
+      </button>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card"><div class="s-label">Total Items</div><div class="s-val rouge" id="st-total">0</div></div>
+      <div class="stat-card"><div class="s-label">棚卸金額</div><div class="s-val" id="st-value">¥0</div></div>
+      <div class="stat-card"><div class="s-label">在庫少 (&lt;5)</div><div class="s-val warn" id="st-low">0</div></div>
+      <div class="stat-card"><div class="s-label">Categories</div><div class="s-val" id="st-cats">0</div></div>
+    </div>
+
+    <div class="filter-bar">
+      <input class="form-input" type="text" id="search" placeholder="品番・品名・色・仕入先で検索..." oninput="renderTable()">
+      <select class="form-input" id="f-cat" onchange="renderTable()" style="width:auto;min-width:130px">
+        <option value="">すべてのカテゴリ</option>
+      </select>
+      <select class="form-input" id="f-unit" onchange="renderTable()" style="width:auto">
+        <option value="">すべての単位</option>
+        <option value="m">m</option>
+        <option value="反">反</option>
+      </select>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th style="width:36px"></th>
+          <th style="width:88px">品番</th>
+          <th style="width:130px">品名</th>
+          <th style="width:70px">色</th>
+          <th style="width:96px">カテゴリ</th>
+          <th style="width:46px">単位</th>
+          <th style="width:60px">在庫</th>
+          <th style="width:72px">単価</th>
+          <th style="width:80px">金額</th>
+          <th style="width:158px">数量入力</th>
+          <th style="width:88px">操作</th>
+        </tr></thead>
+        <tbody id="inv-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 履歴 -->
+  <div class="pane" id="pane-history">
+    <div class="page-header">
+      <div class="page-title"><span>History</span>入出庫履歴</div>
+      <button class="btn btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="if(confirm('全履歴を削除しますか？'))clearHistory()">履歴をクリア</button>
+    </div>
+    <div class="filter-bar">
+      <input class="form-input" type="text" id="hist-q" placeholder="品番・品名で絞り込み..." oninput="renderHistory()">
+    </div>
+    <div class="pill-tabs">
+      <div class="pill active" onclick="setHistType('',this)">すべて</div>
+      <div class="pill" onclick="setHistType('入庫',this)">入庫</div>
+      <div class="pill" onclick="setHistType('出庫',this)">出庫</div>
+      <div class="pill" onclick="setHistType('出荷',this)">出荷</div>
+      <div class="pill" onclick="setHistType('棚卸調整',this)">棚卸調整</div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th style="width:130px">日時</th>
+          <th style="width:88px">品番</th>
+          <th style="width:130px">品名</th>
+          <th style="width:80px">種別</th>
+          <th style="width:65px">増減</th>
+          <th style="width:80px">更新後在庫</th>
+          <th style="width:72px">担当者</th>
+          <th>備考</th>
+        </tr></thead>
+        <tbody id="hist-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- インポート -->
+  <div class="pane" id="pane-import">
+    <div class="page-header">
+      <div class="page-title"><span>Import</span>一括インポート</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px">
+      <div>
+        <div class="form-label" style="margin-bottom:10px">CSV / TSV ファイル</div>
+        <div class="import-zone" id="drop-zone" onclick="document.getElementById('csv-input').click()" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+          <div class="zone-icon">↑</div>
+          <p>クリックまたはドラッグ&amp;ドロップ</p>
+          <p class="hint">UTF-8 / Shift-JIS 対応</p>
+        </div>
+        <input type="file" id="csv-input" accept=".csv,.tsv,.txt" style="display:none" onchange="onFileSelect(event)">
+      </div>
+      <div>
+        <div class="form-label" style="margin-bottom:10px">スプレッドシートからコピペ</div>
+        <textarea class="form-input paste-area" id="paste-area" placeholder="ExcelやGoogleスプレッドシートのセルをコピーしてここに貼り付け（タブ区切り自動解析）" oninput="parsePaste()"></textarea>
+      </div>
+    </div>
+
+    <div id="mapping-section" style="display:none">
+      <div class="form-label" style="margin-bottom:12px">列の対応付け</div>
+      <div id="col-mapping" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:12px;margin-bottom:16px"></div>
+      <div class="import-tip">品番か品名のどちらかは必須です。既存データと品番が一致する場合は上書き更新されます。</div>
+      <div class="preview-table" id="preview-table"></div>
+      <div style="display:flex;gap:12px;margin-top:18px;align-items:center;flex-wrap:wrap">
+        <label style="font-size:12px;display:flex;align-items:center;gap:7px;cursor:pointer;color:var(--ink2)">
+          <input type="checkbox" id="overwrite-check" checked> 同じ品番は上書き更新
+        </label>
+        <div style="margin-left:auto;display:flex;gap:8px">
+          <button class="btn" onclick="resetImport()">リセット</button>
+          <button class="btn btn-primary" onclick="executeImport()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            取り込む
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+</div>
+
+<!-- 追加・編集モーダル -->
+<div class="overlay" id="item-modal">
+<div class="modal">
+  <div class="modal-eyebrow" id="modal-eyebrow">New Item</div>
+  <h3 id="modal-title">生地を追加</h3>
+  <div class="form-grid">
+    <div class="form-group"><div class="form-label">品番</div><input class="form-input" id="f-code" type="text" placeholder="例: KM-001"></div>
+    <div class="form-group"><div class="form-label">品名</div><input class="form-input" id="f-name" type="text" placeholder="例: 麻混ローン"></div>
+    <div class="form-group"><div class="form-label">色</div><input class="form-input" id="f-color" type="text" placeholder="例: オフホワイト"></div>
+    <div class="form-group"><div class="form-label">カテゴリ</div><input class="form-input" id="f-cat-input" type="text" list="cat-list" placeholder="例: 綿、麻、シルク"><datalist id="cat-list"></datalist></div>
+    <div class="form-group"><div class="form-label">管理単位</div>
+      <select class="form-input" id="f-unit-select"><option value="m">m（メートル）</option><option value="反">反（反物）</option></select>
+    </div>
+    <div class="form-group"><div class="form-label">在庫数</div><input class="form-input" id="f-stock" type="number" step="0.1" value="0"></div>
+    <div class="form-group"><div class="form-label">単価（円）</div><input class="form-input" id="f-price" type="number" value="0"></div>
+    <div class="form-group"><div class="form-label">仕入先</div><input class="form-input" id="f-supplier" type="text"></div>
+    <div class="form-group"><div class="form-label">商品紐付けID</div><input class="form-input" id="f-pid" type="text" placeholder="EC商品ID等"></div>
+    <div class="form-group full"><div class="form-label">写真URL</div><input class="form-input" id="f-photo" type="url" placeholder="https://..."></div>
+    <div class="form-group full"><div class="form-label">備考</div><textarea class="form-input" id="f-memo" rows="2"></textarea></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" onclick="closeModal('item-modal')">キャンセル</button>
+    <button class="btn btn-primary" onclick="submitItem()" id="submit-btn">追加する</button>
+  </div>
+</div>
+</div>
+
+<!-- 入出庫モーダル -->
+<div class="overlay" id="stock-modal">
+<div class="modal" style="max-width:400px">
+  <div class="modal-eyebrow">Stock Update</div>
+  <h3 id="sm-title"></h3>
+  <div class="modal-info" id="sm-info"></div>
+  <div class="form-grid">
+    <div class="form-group"><div class="form-label">種別</div>
+      <select class="form-input" id="s-type">
+        <option value="入庫">入庫（増加）</option>
+        <option value="出庫">出庫（減少）</option>
+        <option value="棚卸調整">棚卸調整</option>
+      </select>
+    </div>
+    <div class="form-group"><div class="form-label">数量</div><input class="form-input" id="s-qty" type="number" step="0.1" min="0.1"></div>
+    <div class="form-group"><div class="form-label">担当者</div><input class="form-input" id="s-op" type="text"></div>
+    <div class="form-group"><div class="form-label">備考</div><input class="form-input" id="s-memo" type="text"></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" onclick="closeModal('stock-modal')">キャンセル</button>
+    <button class="btn btn-primary" onclick="submitStock()">更新する</button>
+  </div>
+</div>
+</div>
+
+<!-- 出荷モーダル -->
+<div class="overlay" id="ship-modal">
+<div class="modal" style="max-width:440px">
+  <div class="modal-eyebrow">Shipping</div>
+  <h3>出荷処理</h3>
+  <div class="ship-info-bar">出荷すると在庫が減少し、履歴に「出荷」として記録されます</div>
+  <div class="form-grid">
+    <div class="form-group full">
+      <div class="form-label">品番・品名</div>
+      <select class="form-input" id="ship-item" onchange="onShipSelect()"><option value="">— 選択してください —</option></select>
+    </div>
+    <div id="ship-info" style="display:none;grid-column:1/-1;font-size:12px;color:var(--ink2);padding:6px 0;border-bottom:0.5px solid var(--border)"></div>
+    <div class="form-group"><div class="form-label">出荷数量</div><input class="form-input" id="ship-qty" type="number" step="0.1" min="0.1" placeholder="m数 or 反数"></div>
+    <div class="form-group"><div class="form-label">担当者</div><input class="form-input" id="ship-op" type="text"></div>
+    <div class="form-group full"><div class="form-label">備考（送り先など）</div><input class="form-input" id="ship-memo" type="text" placeholder="例: 東京店へ配送"></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" onclick="closeModal('ship-modal')">キャンセル</button>
+    <button class="btn btn-ship" onclick="submitShip()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+      出荷する
+    </button>
+  </div>
+</div>
+</div>
+
+<script>
+// ===== 定数・グローバル変数 =====
+const FIELDS = ['品番','品名','色','カテゴリ','管理単位','在庫数','単価','仕入先','写真URL','商品紐付けID','備考'];
+const SK = 'km_fabric_items';
+const HK = 'km_fabric_history';
+const GAS_KEY = 'km_gas_url';
+
+let items = [];
+let historyData = [];
+let editId = null;
+let stockId = null;
+let importData = null;
+let histTypeFilter = '';
+let GAS_URL = localStorage.getItem(GAS_KEY) || '';
+let GAS_MODE = false;
+
+// ===== ユーティリティ =====
+function genId() { return Date.now() + '-' + Math.random().toString(36).slice(2, 7); }
+
+function showToast(msg, duration = 2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ===== ローカルストレージ =====
+function load() {
+  try { items = JSON.parse(localStorage.getItem(SK) || '[]'); } catch(e) { items = []; }
+  try { historyData = JSON.parse(localStorage.getItem(HK) || '[]'); } catch(e) { historyData = []; }
+}
+function save() { localStorage.setItem(SK, JSON.stringify(items)); }
+function saveHist() { localStorage.setItem(HK, JSON.stringify(historyData)); }
+
+// ===== 初期化 =====
+load();
+renderTable();
+updateStats();
+
+// GAS URL が保存済みなら自動接続
+window.addEventListener('DOMContentLoaded', () => {
+  if (GAS_URL) {
+    document.getElementById('gas-url-input').value = GAS_URL;
+    connectGas();
+  }
+});
+
+// モーダル外クリックで閉じる
+document.querySelectorAll('.overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+
+// ===== ナビゲーション =====
+function showPane(name, el) {
+  document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('pane-' + name).classList.add('active');
+  el.classList.add('active');
+  if (name === 'history') renderHistory();
+}
+
+// ===== 統計更新 =====
+function updateStats() {
+  const total = items.length;
+  const value = items.reduce((s, it) => s + (Number(it['在庫数']) || 0) * (Number(it['単価']) || 0), 0);
+  const low = items.filter(it => (Number(it['在庫数']) || 0) < 5).length;
+  const cats = new Set(items.map(it => it['カテゴリ']).filter(Boolean)).size;
+  document.getElementById('st-total').textContent = total;
+  document.getElementById('st-value').textContent = '¥' + value.toLocaleString();
+  document.getElementById('st-low').textContent = low;
+  document.getElementById('st-cats').textContent = cats;
+  document.getElementById('sb-val').textContent = '¥' + value.toLocaleString();
+  document.getElementById('sb-items').textContent = '品目数 ' + total;
+  document.getElementById('sb-low').textContent = '在庫少 ' + low + ' 品目';
+  rebuildCatFilter();
+  rebuildShipSelect();
+  rebuildCatDatalist();
+}
+
+function rebuildCatFilter() {
+  const cats = [...new Set(items.map(it => it['カテゴリ'] || '').filter(Boolean))].sort();
+  const sel = document.getElementById('f-cat');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">すべてのカテゴリ</option>' + cats.map(c => `<option value="${c}">${c}</option>`).join('');
+  if (cats.includes(cur)) sel.value = cur;
+}
+
+function rebuildCatDatalist() {
+  const cats = [...new Set(items.map(it => it['カテゴリ'] || '').filter(Boolean))].sort();
+  document.getElementById('cat-list').innerHTML = cats.map(c => `<option value="${c}">`).join('');
+}
+
+function rebuildShipSelect() {
+  const sel = document.getElementById('ship-item');
+  sel.innerHTML = '<option value="">— 選択してください —</option>' +
+    items.map(it => `<option value="${it._id}">${it['品番'] ? it['品番'] + ' ' : ''}${it['品名']}（${it['在庫数']}${it['管理単位'] || 'm'}）</option>`).join('');
+}
+
+// ===== 在庫テーブル描画 =====
+function renderTable() {
+  const q = (document.getElementById('search').value || '').toLowerCase();
+  const cat = document.getElementById('f-cat').value;
+  const unit = document.getElementById('f-unit').value;
+  const tbody = document.getElementById('inv-body');
+  const filtered = items.filter(it => {
+    const mq = !q || ['品番', '品名', '色', '仕入先'].some(k => String(it[k] || '').toLowerCase().includes(q));
+    return mq && (!cat || (it['カテゴリ'] || '') === cat) && (!unit || (it['管理単位'] || 'm') === unit);
+  });
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="11">該当する生地がありません</td></tr>';
+    return;
+  }
+  tbody.innerHTML = filtered.map(it => {
+    const stock = Number(it['在庫数']) || 0;
+    const price = Number(it['単価']) || 0;
+    const lowCls = stock < 5 ? ' class="low"' : '';
+    const thumb = it['写真URL']
+      ? `<img src="${escHtml(it['写真URL'])}" class="img-thumb" alt="" onerror="this.style.display='none'">`
+      : `<span class="img-placeholder"></span>`;
+    const ub = it['管理単位'] === '反'
+      ? '<span class="badge badge-tan">反</span>'
+      : '<span class="badge badge-m">m</span>';
+    const cb = it['カテゴリ']
+      ? `<span class="badge badge-cat">${escHtml(it['カテゴリ'])}</span>`
+      : '<span style="color:var(--ink3)">—</span>';
+    const id = it._id;
+    return `<tr>
+      <td>${thumb}</td>
+      <td class="primary" title="${escHtml(it['品番'] || '')}">${escHtml(it['品番'] || '')}</td>
+      <td class="primary" title="${escHtml(it['品名'] || '')}">${escHtml(it['品名'] || '')}</td>
+      <td title="${escHtml(it['色'] || '')}">${escHtml(it['色'] || '')}</td>
+      <td>${cb}</td>
+      <td>${ub}</td>
+      <td${lowCls}>${stock}</td>
+      <td>¥${price.toLocaleString()}</td>
+      <td>¥${(stock * price).toLocaleString()}</td>
+      <td><div class="qty-cell">
+        <input type="number" id="q-${id}" step="1" min="0" placeholder="数量">
+        <button class="btn-in-sm" onclick="inlineUpdate('${id}',1)">↓入</button>
+        <button class="btn-out-sm" onclick="inlineUpdate('${id}',-1)">↑出</button>
+      </div></td>
+      <td><div class="action-cell">
+        <button class="btn btn-sm btn-ghost" onclick="openStockModal('${id}')" title="詳細更新">⇄</button>
+        <button class="btn btn-sm btn-ghost" onclick="openEditModal('${id}')" title="編集">✎</button>
+        <button class="btn btn-sm btn-ghost" onclick="deleteItem('${id}')" title="削除" style="color:var(--danger)">✕</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ===== インライン入出庫 =====
+function inlineUpdate(id, sign) {
+  const el = document.getElementById('q-' + id);
+  const qty = parseFloat(el.value);
+  if (!qty || qty <= 0) { el.focus(); return; }
+  applyStock(id, sign * qty, sign > 0 ? '入庫' : '出庫', '', '');
+  el.value = '';
+}
+
+// ===== 在庫増減（ローカル版） =====
+function applyStockLocal(id, delta, type, op, memo) {
+  const item = items.find(it => it._id === id);
+  if (!item) return;
+  const cur = Number(item['在庫数']) || 0;
+  const next = cur + delta;
+  if (next < 0) {
+    alert('在庫がマイナスになります（現在: ' + cur + (item['管理単位'] || 'm') + '）');
+    return;
+  }
+  item['在庫数'] = Math.round(next * 100) / 100;
+  save();
+  historyData.unshift({
+    _id: genId(),
+    日時: new Date().toISOString(),
+    品番: item['品番'] || '',
+    品名: item['品名'] || '',
+    種別: type,
+    増減数: delta,
+    更新後在庫: item['在庫数'],
+    担当者: op,
+    備考: memo
+  });
+  saveHist();
+  renderTable();
+  updateStats();
+  showToast(type + 'しました');
+}
+
+// ===== 追加・編集モーダル =====
+function openAddModal() {
+  editId = null;
+  document.getElementById('modal-eyebrow').textContent = 'New Item';
+  document.getElementById('modal-title').textContent = '生地を追加';
+  document.getElementById('submit-btn').textContent = '追加する';
+  ['f-code','f-name','f-color','f-cat-input','f-supplier','f-pid','f-photo','f-memo'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-stock').value = 0;
+  document.getElementById('f-price').value = 0;
+  document.getElementById('f-unit-select').value = 'm';
+  document.getElementById('item-modal').classList.add('open');
+}
+
+function openEditModal(id) {
+  const it = items.find(i => i._id === id);
+  if (!it) return;
+  editId = id;
+  document.getElementById('modal-eyebrow').textContent = 'Edit Item';
+  document.getElementById('modal-title').textContent = '生地を編集';
+  document.getElementById('submit-btn').textContent = '更新する';
+  document.getElementById('f-code').value = it['品番'] || '';
+  document.getElementById('f-name').value = it['品名'] || '';
+  document.getElementById('f-color').value = it['色'] || '';
+  document.getElementById('f-cat-input').value = it['カテゴリ'] || '';
+  document.getElementById('f-unit-select').value = it['管理単位'] || 'm';
+  document.getElementById('f-stock').value = it['在庫数'] || 0;
+  document.getElementById('f-price').value = it['単価'] || 0;
+  document.getElementById('f-supplier').value = it['仕入先'] || '';
+  document.getElementById('f-pid').value = it['商品紐付けID'] || '';
+  document.getElementById('f-photo').value = it['写真URL'] || '';
+  document.getElementById('f-memo').value = it['備考'] || '';
+  document.getElementById('item-modal').classList.add('open');
+}
+
+function submitItemLocal() {
+  const code = document.getElementById('f-code').value.trim();
+  const name = document.getElementById('f-name').value.trim();
+  if (!code && !name) { alert('品番か品名を入力してください'); return; }
+  const data = {
+    '品番': code,
+    '品名': name,
+    '色': document.getElementById('f-color').value,
+    'カテゴリ': document.getElementById('f-cat-input').value,
+    '管理単位': document.getElementById('f-unit-select').value,
+    '在庫数': parseFloat(document.getElementById('f-stock').value) || 0,
+    '単価': parseFloat(document.getElementById('f-price').value) || 0,
+    '仕入先': document.getElementById('f-supplier').value,
+    '商品紐付けID': document.getElementById('f-pid').value,
+    '写真URL': document.getElementById('f-photo').value,
+    '備考': document.getElementById('f-memo').value
+  };
+  if (editId) {
+    Object.assign(items.find(i => i._id === editId), data);
+    showToast('更新しました');
+  } else {
+    items.push({ _id: genId(), ...data });
+    showToast('追加しました');
+  }
+  save();
+  closeModal('item-modal');
+  renderTable();
+  updateStats();
+}
+
+// ===== 入出庫詳細モーダル =====
+function openStockModal(id) {
+  stockId = id;
+  const it = items.find(i => i._id === id);
+  document.getElementById('sm-title').textContent = (it['品番'] || '') + ' ' + (it['品名'] || '');
+  document.getElementById('sm-info').textContent = '現在の在庫: ' + it['在庫数'] + (it['管理単位'] || 'm');
+  document.getElementById('s-qty').value = '';
+  document.getElementById('s-memo').value = '';
+  document.getElementById('s-op').value = '';
+  document.getElementById('s-type').value = '入庫';
+  document.getElementById('stock-modal').classList.add('open');
+}
+
+function submitStockLocal() {
+  const type = document.getElementById('s-type').value;
+  const qty = parseFloat(document.getElementById('s-qty').value);
+  if (!qty || qty <= 0) { alert('数量を入力してください'); return; }
+  const delta = (type === '出庫') ? -qty : qty;
+  applyStock(stockId, delta, type, document.getElementById('s-op').value, document.getElementById('s-memo').value);
+  closeModal('stock-modal');
+}
+
+// ===== 出荷モーダル =====
+function openShipModal() {
+  ['ship-qty','ship-memo','ship-op'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('ship-item').value = '';
+  document.getElementById('ship-info').style.display = 'none';
+  document.getElementById('ship-modal').classList.add('open');
+}
+
+function onShipSelect() {
+  const id = document.getElementById('ship-item').value;
+  const it = items.find(i => i._id === id);
+  const el = document.getElementById('ship-info');
+  if (it) {
+    el.style.display = '';
+    el.textContent = '現在の在庫: ' + it['在庫数'] + (it['管理単位'] || 'm') + '　単価: ¥' + Number(it['単価'] || 0).toLocaleString();
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+function submitShipLocal() {
+  const id = document.getElementById('ship-item').value;
+  const qty = parseFloat(document.getElementById('ship-qty').value);
+  if (!id) { alert('品目を選択してください'); return; }
+  if (!qty || qty <= 0) { alert('数量を入力してください'); return; }
+  applyStock(id, -qty, '出荷', document.getElementById('ship-op').value, document.getElementById('ship-memo').value);
+  closeModal('ship-modal');
+}
+
+// ===== 削除（ローカル版） =====
+function deleteItemLocal(id) {
+  const it = items.find(i => i._id === id);
+  if (!it) return;
+  if (!confirm((it['品名'] || it['品番'] || 'この生地') + ' を削除しますか？')) return;
+  items = items.filter(i => i._id !== id);
+  save();
+  renderTable();
+  updateStats();
+  showToast('削除しました');
+}
+
+// ===== モーダル共通 =====
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ===== 履歴 =====
+function setHistType(t, el) {
+  histTypeFilter = t;
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderHistory();
+}
+
+function renderHistory() {
+  const q = (document.getElementById('hist-q').value || '').toLowerCase();
+  const tbody = document.getElementById('hist-body');
+  let h = [...historyData];
+  if (histTypeFilter) h = h.filter(r => r['種別'] === histTypeFilter);
+  if (q) h = h.filter(r => ['品番', '品名'].some(k => String(r[k] || '').toLowerCase().includes(q)));
+  if (!h.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="8">履歴がありません</td></tr>';
+    return;
+  }
+  tbody.innerHTML = h.map(r => {
+    const delta = Number(r['増減数']) || 0;
+    const sign = delta >= 0 ? '+' : '';
+    const col = delta >= 0 ? 'var(--moss)' : 'var(--danger)';
+    const dt = r['日時'] ? new Date(r['日時']).toLocaleString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+    const badgeMap = { '入庫': 'badge-in', '出庫': 'badge-out', '出荷': 'badge-ship', '棚卸調整': 'badge-adj' };
+    const tb = badgeMap[r['種別']] || 'badge-tan';
+    return `<tr>
+      <td>${dt}</td>
+      <td>${escHtml(r['品番'] || '')}</td>
+      <td>${escHtml(r['品名'] || '')}</td>
+      <td><span class="badge ${tb}">${escHtml(r['種別'] || '')}</span></td>
+      <td style="color:${col};font-weight:400">${sign}${delta}</td>
+      <td>${r['更新後在庫'] !== undefined ? r['更新後在庫'] : ''}</td>
+      <td>${escHtml(r['担当者'] || '')}</td>
+      <td>${escHtml(r['備考'] || '')}</td>
+    </tr>`;
+  }).join('');
+}
+
+function clearHistory() {
+  historyData = [];
+  saveHist();
+  renderHistory();
+  showToast('履歴をクリアしました');
+}
+
+// ===== インポート =====
+const IFM = {
+  '品番': ['品番','item code','item_code','コード','code'],
+  '品名': ['品名','name','商品名','生地名'],
+  '色': ['色','color','colour','カラー'],
+  'カテゴリ': ['カテゴリ','category','種類','分類','素材'],
+  '管理単位': ['管理単位','単位','unit'],
+  '在庫数': ['在庫数','在庫','stock','quantity','qty','数量'],
+  '単価': ['単価','price','価格'],
+  '仕入先': ['仕入先','supplier'],
+  '写真URL': ['写真url','写真','photo','image url','画像url'],
+  '商品紐付けID': ['商品紐付けid','商品id','product id','ec id'],
+  '備考': ['備考','memo','note','notes']
+};
+
+function guessField(h) {
+  const lh = h.toLowerCase().trim();
+  for (const [f, a] of Object.entries(IFM)) {
+    if (a.some(x => lh === x || lh.includes(x))) return f;
+  }
+  return '';
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  const delim = lines[0].includes('\t') ? '\t' : ',';
+  return lines.map(line => {
+    if (delim === ',') {
+      const r = []; let c = '', inQ = false;
+      for (let i = 0; i < line.length; i++) {
+        if (line[i] === '"') { inQ = !inQ; }
+        else if (line[i] === ',' && !inQ) { r.push(c); c = ''; }
+        else c += line[i];
+      }
+      r.push(c);
+      return r;
+    }
+    return line.split('\t');
+  });
+}
+
+function setupImport(rows) {
+  if (rows.length < 2) { alert('データが少なすぎます'); return; }
+  importData = rows;
+  const headers = rows[0];
+  const sec = document.getElementById('mapping-section');
+  const md = document.getElementById('col-mapping');
+  sec.style.display = '';
+  md.innerHTML = FIELDS.map(f => {
+    const guess = headers.findIndex(h => guessField(h) === f);
+    return `<div class="form-group"><div class="form-label">${f}</div><select class="form-input" id="map-${f}"><option value="">（取り込まない）</option>${headers.map((h, i) => `<option value="${i}"${i === guess ? ' selected' : ''}>${escHtml(h)}</option>`).join('')}</select></div>`;
+  }).join('');
+  document.getElementById('preview-table').innerHTML = `<table><thead><tr>${headers.map(h => `<th>${escHtml(h)}</th>`).join('')}</tr></thead><tbody>${rows.slice(1, 6).map(r => `<tr>${r.map(c => `<td>${escHtml(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+}
+
+function parsePaste() {
+  const text = document.getElementById('paste-area').value;
+  if (text.trim()) setupImport(parseCSV(text));
+}
+
+function onFileSelect(e) {
+  const f = e.target.files[0];
+  if (!f) return;
+  // Shift-JIS対応
+  const reader = new FileReader();
+  reader.onload = ev => setupImport(parseCSV(ev.target.result));
+  // まずUTF-8で試みる
+  reader.readAsText(f, 'UTF-8');
+}
+
+function onDragOver(e) { e.preventDefault(); document.getElementById('drop-zone').classList.add('drag'); }
+function onDragLeave() { document.getElementById('drop-zone').classList.remove('drag'); }
+function onDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if (f) {
+    const fr = new FileReader();
+    fr.onload = ev => setupImport(parseCSV(ev.target.result));
+    fr.readAsText(f, 'UTF-8');
+  }
+}
+
+function executeImport() {
+  if (!importData) return;
+  const ow = document.getElementById('overwrite-check').checked;
+  const mapping = {};
+  FIELDS.forEach(f => {
+    const v = document.getElementById('map-' + f).value;
+    if (v !== '') mapping[f] = Number(v);
+  });
+  if (!('品番' in mapping) && !('品名' in mapping)) { alert('品番か品名の列を指定してください'); return; }
+  let added = 0, updated = 0;
+  importData.slice(1).forEach(row => {
+    const data = {};
+    FIELDS.forEach(f => { if (f in mapping) data[f] = (row[mapping[f]] || '').toString().trim(); });
+    if (!data['品番'] && !data['品名']) return;
+    const ex = data['品番'] ? items.find(it => it['品番'] === data['品番']) : null;
+    if (ex && ow) {
+      FIELDS.forEach(f => { if (f in mapping && f !== '在庫数') ex[f] = data[f]; });
+      if ('在庫数' in mapping) ex['在庫数'] = parseFloat(data['在庫数']) || ex['在庫数'];
+      if ('単価' in mapping) ex['単価'] = parseFloat(data['単価']) || ex['単価'];
+      updated++;
+    } else if (!ex) {
+      items.push({ _id: genId(), ...data, '在庫数': parseFloat(data['在庫数']) || 0, '単価': parseFloat(data['単価']) || 0, '管理単位': data['管理単位'] || 'm' });
+      added++;
+    }
+  });
+  save();
+  updateStats();
+  renderTable();
+  showToast(`取り込み完了：新規 ${added}件、更新 ${updated}件`);
+  resetImport();
+}
+
+function resetImport() {
+  importData = null;
+  document.getElementById('paste-area').value = '';
+  document.getElementById('csv-input').value = '';
+  document.getElementById('mapping-section').style.display = 'none';
+}
+
+// ===== CSVエクスポート =====
+function exportCSV() {
+  if (!items.length) { alert('在庫データがありません'); return; }
+  const rows = [FIELDS.join(',')];
+  items.forEach(it => rows.push(FIELDS.map(c => '"' + String(it[c] || '').replace(/"/g, '""') + '"').join(',')));
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['\uFEFF' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' }));
+  a.download = '生地在庫_' + new Date().toISOString().slice(0, 10) + '.csv';
+  a.click();
+}
+
+// ===== GAS連携レイヤー =====
+function onGasUrlInput() {
+  const v = document.getElementById('gas-url-input').value.trim();
+  if (!v) setGasMode(false);
+}
+
+async function connectGas() {
+  const url = document.getElementById('gas-url-input').value.trim();
+  if (!url) { setGasMode(false); localStorage.removeItem(GAS_KEY); return; }
+  setConnStatus('connecting');
+  try {
+    const res = await fetch(url + '?action=getStats');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    await res.json();
+    GAS_URL = url;
+    localStorage.setItem(GAS_KEY, url);
+    setGasMode(true);
+    await gasSync();
+    showToast('GASに接続しました');
+  } catch(e) {
+    setConnStatus('error');
+    document.getElementById('conn-label').textContent = '接続失敗: ' + e.message;
+  }
+}
+
+function disconnectGas() {
+  GAS_URL = '';
+  localStorage.removeItem(GAS_KEY);
+  document.getElementById('gas-url-input').value = '';
+  setGasMode(false);
+  showToast('GAS接続を解除しました');
+}
+
+function setGasMode(on) {
+  GAS_MODE = on;
+  const dot = document.getElementById('conn-dot');
+  const pill = document.getElementById('mode-pill');
+  const label = document.getElementById('conn-label');
+  if (on) {
+    dot.className = 'conn-dot on';
+    pill.className = 'mode-pill gas-mode';
+    pill.textContent = 'GAS同期中';
+    label.textContent = '接続済み — リアルタイム同期';
+  } else {
+    dot.className = 'conn-dot';
+    pill.className = 'mode-pill';
+    pill.textContent = 'ローカル保存';
+    label.textContent = 'GAS URL（省略時はブラウザ保存）';
+  }
+}
+
+function setConnStatus(s) {
+  const dot = document.getElementById('conn-dot');
+  if (s === 'connecting') { dot.className = 'conn-dot'; dot.style.background = '#e8a030'; }
+  else if (s === 'error') { dot.className = 'conn-dot err'; }
+}
+
+async function callGAS(params) {
+  const res = await fetch(GAS_URL + '?' + new URLSearchParams(params));
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return res.json();
+}
+
+async function callGASPost(body) {
+  const res = await fetch(GAS_URL, {
+    method: 'POST',
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return res.json();
+}
+
+async function gasSync() {
+  if (!GAS_MODE) return;
+  try {
+    const [inv, hist] = await Promise.all([
+      callGAS({ action: 'getInventory' }),
+      callGAS({ action: 'getHistory', limit: 300 })
+    ]);
+    items = (inv.items || []).map(it => ({
+      _id: it['品番'] || genId(),
+      ...it,
+      _row: it._row
+    }));
+    historyData = (hist.history || []).map(h => ({ _id: genId(), ...h }));
+    save();
+    saveHist();
+    renderTable();
+    renderHistory();
+    updateStats();
+  } catch(e) {
+    console.error('Sync error:', e);
+    showToast('同期エラー: ' + e.message, 4000);
+  }
+}
+
+// ===== GASモード時のCRUD上書き =====
+function applyStock(id, delta, type, op, memo) {
+  if (!GAS_MODE) {
+    applyStockLocal(id, delta, type, op, memo);
+    return;
+  }
+  // GASモード
+  const item = items.find(it => it._id === id);
+  if (!item) return;
+  const cur = Number(item['在庫数']) || 0;
+  if (cur + delta < 0) {
+    alert('在庫がマイナスになります（現在: ' + cur + (item['管理単位'] || 'm') + '）');
+    return;
+  }
+  callGASPost({
+    action: 'updateStock',
+    _row: item._row,
+    delta,
+    type,
+    operator: op,
+    memo
+  }).then(res => {
+    if (res.success) { gasSync(); showToast(type + 'しました'); }
+    else alert(res.error || 'エラー');
+  }).catch(e => alert('通信エラー: ' + e.message));
+}
+
+function submitItem() {
+  if (!GAS_MODE) { submitItemLocal(); return; }
+  const code = document.getElementById('f-code').value.trim();
+  const name = document.getElementById('f-name').value.trim();
+  if (!code && !name) { alert('品番か品名を入力してください'); return; }
+  const data = {
+    action: editId ? 'updateItem' : 'addItem',
+    '品番': code,
+    '品名': name,
+    '色': document.getElementById('f-color').value,
+    'カテゴリ': document.getElementById('f-cat-input').value,
+    '管理単位': document.getElementById('f-unit-select').value,
+    '在庫数': parseFloat(document.getElementById('f-stock').value) || 0,
+    '単価': parseFloat(document.getElementById('f-price').value) || 0,
+    '仕入先': document.getElementById('f-supplier').value,
+    '商品紐付けID': document.getElementById('f-pid').value,
+    '写真URL': document.getElementById('f-photo').value,
+    '備考': document.getElementById('f-memo').value
+  };
+  if (editId) {
+    const it = items.find(i => i._id === editId);
+    if (it && it._row) data._row = it._row;
+  }
+  callGASPost(data).then(res => {
+    if (res.success) { closeModal('item-modal'); gasSync(); showToast(editId ? '更新しました' : '追加しました'); }
+    else alert(res.error || 'エラー');
+  }).catch(e => alert('通信エラー: ' + e.message));
+}
+
+function submitStock() {
+  submitStockLocal();
+}
+
+function submitShip() {
+  submitShipLocal();
+}
+
+function deleteItem(id) {
+  if (!GAS_MODE) { deleteItemLocal(id); return; }
+  const it = items.find(i => i._id === id);
+  if (!it) return;
+  if (!confirm((it['品名'] || it['品番'] || 'この生地') + ' を削除しますか？')) return;
+  callGASPost({ action: 'deleteItem', _row: it._row }).then(res => {
+    if (res.success) { gasSync(); showToast('削除しました'); }
+    else alert(res.error || 'エラー');
+  }).catch(e => alert('通信エラー: ' + e.message));
+}
+</script>
+
+</body>
+</html>
