@@ -1273,9 +1273,11 @@ async function gasSync() {
       callGAS({ action: 'getInventory' }),
       callGAS({ action: 'getHistory', limit: 300 })
     ]);
-    items = (inv.items || []).map(it => ({
-      _id: it['品番'] || genId(),
+    items = (inv.items || []).map((it, idx) => ({
+      _id: it['品番'] ? 'gas-' + it['品番'] : 'gas-row-' + (it._row || idx),
       ...it,
+      '在庫数': Number(it['在庫数']) >= 0 ? Number(it['在庫数']) : 0,
+      '単価': Number(it['単価']) || 0,
       _row: it._row
     }));
     historyData = (hist.history || []).map(h => ({ _id: genId(), ...h }));
